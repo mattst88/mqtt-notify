@@ -1,0 +1,5 @@
+[DEFAULT]
+broker = example.com
+port = 8883
+topic = irssi/#
+user = myuser

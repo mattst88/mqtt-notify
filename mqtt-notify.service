@@ -1,0 +1,11 @@
+[Unit]
+Description=MQTT to libnotify IRC notifications
+After=network-online.target nss-lookup.target
+Wants=network-online.target nss-lookup.target
+
+[Service]
+Type=simple
+ExecStart=%h/bin/mqtt-notify.py -c %E/%p/config
+
+[Install]
+WantedBy=default.target

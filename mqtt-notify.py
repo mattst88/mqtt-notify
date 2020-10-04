@@ -89,7 +89,7 @@ def on_message(client, userdata, msg):
 def on_disconnect(client, userdata, rc):
     print("Disconnected")
 
-def password(user, host):
+def password(loop, user, host):
     # Insert password with secret-tool(1). E.g.,
     #   secret-tool store --label="mqtts://example.com" user myuser service mqtt host example.com
 
@@ -101,14 +101,24 @@ def password(user, host):
             "host": Secret.SchemaAttributeType.STRING,
         }
     )
+    attributes = {
+        "user": user,
+        "service": "mqtt",
+        "host": host,
+    }
 
-    return Secret.password_lookup_sync(schema,
-        {
-            "user": user,
-            "service": "mqtt",
-            "host": host,
-        },
-        None)
+    pw = None
+    def on_password_lookup(source, result, unused):
+        loop.quit()
+
+        nonlocal pw
+        pw = Secret.password_lookup_finish(result)
+
+    while pw is None:
+        Secret.password_lookup(schema, attributes, None, on_password_lookup, None)
+
+        loop.run()
+    return pw
 
 def config(filename):
     try:
@@ -145,7 +155,7 @@ def main(argv):
     client = mqtt.Client(userdata=topic)
 
     client.tls_set()
-    client.username_pw_set(user, password(user, broker))
+    client.username_pw_set(user, password(loop, user, broker))
     client.on_connect = on_connect
     client.on_message = on_message
     client.on_disconnect = on_disconnect

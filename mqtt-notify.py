@@ -36,17 +36,6 @@ class Signaler:
     def handler(self, *_):
         self.loop.quit()
 
-class Match:
-    def __init__(self, matchstring):
-        self.matchstring = matchstring
-
-    def match(self, regexp):
-        self.rematch = re.match(regexp, self.matchstring)
-        return bool(self.rematch)
-
-    def group(self, i):
-        return self.rematch.group(i)
-
 def on_connect(client, userdata, flags, rc):
     print("Connected")
 
@@ -55,11 +44,9 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe(userdata)
 
 def on_close(notification):
-    m = subj_fmt.match(notification.props.summary)
-    if m:
+    key = ''
+    if (m := subj_fmt.match(notification.props.summary)) is not None:
         key = m.group('key')
-    else:
-        key = ''
 
     if key in notification_map:
         for i in notification_map[key]:
@@ -71,12 +58,11 @@ def on_message(client, userdata, msg):
     icon = '/usr/share/icons/HighContrast/scalable/apps-extra/internet-group-chat.svg'
     message = msg.payload.decode('utf-8')
 
-    m = Match(message)
-    if m.match(chan_msg):
+    if (m := re.match(chan_msg, message)) is not None:
         subject = 'IRC message on {}'.format(m.group('channel'))
         body = '<{}> {}'.format(m.group('nick'), m.group('msg'))
         key = m.group('channel')
-    elif m.match(priv_msg):
+    if (m := re.match(priv_msg, message)) is not None:
         subject = 'IRC message from {}'.format(m.group('nick'))
         body = '<{}> {}'.format(m.group('nick'), m.group('msg'))
         key = m.group('nick')

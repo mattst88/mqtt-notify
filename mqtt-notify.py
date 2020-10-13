@@ -14,6 +14,7 @@ import configparser
 import re
 import signal
 import sys
+import time
 import paho.mqtt.client as mqtt
 import gi
 gi.require_version('Notify', '0.7')
@@ -89,7 +90,7 @@ def on_message(client, userdata, msg):
 def on_disconnect(client, userdata, rc):
     print("Disconnected")
 
-def password(loop, user, host):
+def password(user, host):
     # Insert password with secret-tool(1). E.g.,
     #   secret-tool store --label="mqtts://example.com" user myuser service mqtt host example.com
 
@@ -107,17 +108,8 @@ def password(loop, user, host):
         "host": host,
     }
 
-    pw = None
-    def on_password_lookup(source, result, unused):
-        loop.quit()
-
-        nonlocal pw
-        pw = Secret.password_lookup_finish(result)
-
-    while pw is None:
-        Secret.password_lookup(schema, attributes, None, on_password_lookup, None)
-
-        loop.run()
+    while (pw := Secret.password_lookup_sync(schema, attributes, None)) is None:
+        time.sleep(5)
     return pw
 
 def config(filename):
@@ -155,7 +147,7 @@ def main(argv):
     client = mqtt.Client(userdata=topic)
 
     client.tls_set()
-    client.username_pw_set(user, password(loop, user, broker))
+    client.username_pw_set(user, password(user, broker))
     client.on_connect = on_connect
     client.on_message = on_message
     client.on_disconnect = on_disconnect

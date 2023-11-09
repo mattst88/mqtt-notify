@@ -85,7 +85,11 @@ def on_message(client, userdata, msg):
         n = notification_map[key][1]
         n.update(subject, body, icon)
 
-    n.show()
+    try:
+        n.show()
+    except GLib.GError as e:
+        print("Failed to show notification: {}".format(e), file=sys.stderr)
+        sys.exit(-1)
 
 def on_disconnect(client, userdata, rc):
     print("Disconnected")

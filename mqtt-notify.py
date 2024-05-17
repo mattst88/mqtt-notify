@@ -41,7 +41,7 @@ class Signaler:
         self.loop.quit()
 
 
-def on_connect(client, userdata, flags, rc):
+def on_connect(client, userdata, flags, reason_code, properties):
     print("Connected")
 
     # Subscribing in on_connect() means that if we lose the connection and
@@ -98,7 +98,7 @@ def on_message(client, userdata, msg):
         sys.exit(-1)
 
 
-def on_disconnect(client, userdata, rc):
+def on_disconnect(client, userdata, flags, reason_code, properties):
     print("Disconnected")
 
 
@@ -164,7 +164,7 @@ def main(argv):
     user, broker, port, topic = config(args.config.name)
 
     Notify.init("MQTT to Notify bridge")
-    client = mqtt.Client(userdata=topic)
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, userdata=topic)
 
     client.tls_set()
     client.username_pw_set(user, password(user, broker))
